@@ -1,5 +1,5 @@
 """
-Profiling harness to run the app under cProfile.
+Profiler to run the app under cProfile.
 
 Usage:
     PROFILE_OUTPUT=/tmp/profile.out python profiling.py

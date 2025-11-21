@@ -35,7 +35,7 @@ async def inference_worker(
             score_tensor = model(x)
             score = float(score_tensor.item())
 
-        state.inference_calls += 1
+        await state.increment_inference_calls()
 
         # Insert event into window
         await state.insert_user_window(event.user_id, event.timestamp, score)

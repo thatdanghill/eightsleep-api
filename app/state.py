@@ -48,6 +48,14 @@ class AppState:
             self.events_received_total += batch_size
             self.ingest_last_ts = time.time()
 
+    async def increment_inference_calls(self):
+        async with self._lock:
+            self.inference_calls += 1
+
+    async def increment_queue_rejections(self):
+        async with self._lock:
+            self.queue_rejections += 1
+
     async def trim_user_window(self, user_id: str, cutoff: int) -> List[Tuple[int, float]]:
         """
         Trim a user's rolling window according to a cutoff timestamp.

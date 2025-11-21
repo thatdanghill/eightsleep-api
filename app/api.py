@@ -35,7 +35,7 @@ async def ingest(batch: EventBatch, state=Depends(get_state)):
             await asyncio.wait_for(state.event_queue.put(event), timeout=0.05)
             accepted += 1
         except asyncio.TimeoutError:
-            state.queue_rejections += 1
+            await state.increment_queue_rejections()
             raise HTTPException(503, detail="Queue full")
 
     await state.record_ingest(accepted)
@@ -76,14 +76,17 @@ async def get_stats(state=Depends(get_state)):
         median of user medians: the median of all the medians for each user over the last five mins
     """
     reference_ts = int(time.time())
-    return {
-        "total ingest requests": state.ingest_requests_total,
-        "total events received": state.events_received_total,
-        "last ingest time": state.ingest_last_ts,
-        "model eval calls": state.inference_calls,
-        "queue rejections": state.queue_rejections,
-        "median of user medians": await state.median_of_medians(reference_ts),
-    }
+    async with state._lock:  # noqa: SLF001
+        stats_snapshot = {
+            "total ingest requests": state.ingest_requests_total,
+            "total events received": state.events_received_total,
+            "last ingest time": state.ingest_last_ts,
+            "model eval calls": state.inference_calls,
+            "queue rejections": state.queue_rejections,
+        }
+
+    stats_snapshot["median of user medians"] = await state.median_of_medians(reference_ts)
+    return stats_snapshot
 
 
 # Profiling
