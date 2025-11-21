@@ -19,6 +19,10 @@ class InefficientModel(nn.Module):
 
 
 def load_model(path: str = "inefficient_model.pt", device: str = "cpu") -> nn.Module:
+    """
+    Load the model from the given path.
+    Only accepts pickles in the form of state dicts, to avoid pickling errors.
+    """
     model = InefficientModel(in_dim=3)
     state_dict = torch.load(path, map_location=device, weights_only=False)
     model.load_state_dict(state_dict)

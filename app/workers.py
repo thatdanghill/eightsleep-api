@@ -25,23 +25,22 @@ async def inference_worker(
     while True:
         event: Event = await state.event_queue.get()
 
-        # Run model inference on this event's features
+        # Make prediction with no_grad to save memory
         with torch.no_grad():
             x = torch.tensor(
                 event.features,
                 dtype=torch.float32,
                 device=device,
-            ).unsqueeze(0)  # shape [1, in_dim]
+            ).unsqueeze(0)
             score_tensor = model(x)
-            # model forward already squeezes last dim in provided script
             score = float(score_tensor.item())
 
         state.inference_calls += 1
 
-        # Update per-user rolling window
+        # Insert event into window
         await state.insert_user_window(event.user_id, event.timestamp, score)
 
-        # Drop anything older than window_seconds
+        # Trim window for user
         cutoff = event.timestamp - state.window_seconds
         await state.trim_user_window(event.user_id, cutoff)
 
@@ -64,5 +63,4 @@ async def persistence_worker(
         try:
             await state.save_to_file(path)
         except Exception:
-            # Avoid crashing the loop; could replace with structured logging.
             pass

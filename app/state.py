@@ -35,15 +35,27 @@ class AppState:
         self.inference_calls = 0
         self.queue_rejections = 0
 
+        # Lock for thread safety
         self._lock = asyncio.Lock()
 
     async def record_ingest(self, batch_size: int):
+        """
+        Atomic update to stats to do with request count
+        :param batch_size: the number of events in the batch
+        """
         async with self._lock:
             self.ingest_requests_total += 1
             self.events_received_total += batch_size
             self.ingest_last_ts = time.time()
 
     async def trim_user_window(self, user_id: str, cutoff: int) -> List[Tuple[int, float]]:
+        """
+        Trim a user's rolling window according to a cutoff timestamp.
+        Windows are assumed to be sorted, as insertion happens in sorted order, and we use the lock.
+        :param user_id: the user_id
+        :param cutoff: the timestamp before which to trim the window
+        :return: The trimmed window
+        """
         async with self._lock:
             window = self.user_windows.get(user_id)
             if not window:
@@ -56,6 +68,12 @@ class AppState:
             return list(window)
 
     async def insert_user_window(self, user_id: str, timestamp: int, score: float):
+        """
+        Insert a score into a user's window in order, that is, maintaining the window order by timestamp
+        :param user_id: the user_id
+        :param timestamp: the timestamp at which to insert
+        :param score: the model output score
+        """
         async with self._lock:
             window = self.user_windows[user_id]
             idx = bisect_right(window, (timestamp, float("inf")))
@@ -94,8 +112,12 @@ class AppState:
         return median(medians)
 
     async def save_to_file(self, path: Optional[Path] = None):
-        if path is None:
-            path = self.state_file
+        """
+        Save the state to a state.json file. This allows us to reload the service if it gets
+        interrupted.
+        :param path: a path to the state JSON file
+        """
+        path = path or self.state_file
         if path is None:
             return
 
@@ -120,8 +142,11 @@ class AppState:
         tmp_path.replace(path)
 
     async def load_from_file(self, path: Optional[Path] = None):
-        if path is None:
-            path = self.state_file
+        """
+        Load the state from a file in order to pick up where we left off
+        :param path: a path to the state JSON file to load from
+        """
+        path = path or self.state_file
         if path is None or not path.exists():
             return
 

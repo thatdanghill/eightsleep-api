@@ -12,6 +12,15 @@ NUM_WORKERS = 4
 
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    The lifespan manager of the app.
+    All code before the "yield" is setup which:
+    - Initializes the state (freshly or from a state JSON)
+    - Spins up workers to process items in the queue and persist the state.
+    All code after the "yield" is teardown which shuts down the workers.
+    :param app:
+    :return:
+    """
     # ---- STARTUP ----
     model = load_model()
     app.state.model = model
@@ -45,3 +54,5 @@ async def lifespan(app: FastAPI):
     for task in tasks:
         with contextlib.suppress(asyncio.CancelledError):
             await task
+
+    app_state.save_to_file(app_state.state_file)

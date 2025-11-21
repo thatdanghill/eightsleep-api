@@ -1,3 +1,7 @@
+"""
+Pydantic Schemas for the input events
+"""
+
 from typing import List
 from pydantic import BaseModel
 
