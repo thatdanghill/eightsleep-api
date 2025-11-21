@@ -14,7 +14,7 @@ docker build -t eightsleep-api .
 Run the API (port 8000):
 ```sh
 docker run --rm -p 8000:8000 \
-  -v data:/data \
+  -v ./data:/data \
   eightsleep-api
 ```
 
