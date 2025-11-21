@@ -46,3 +46,15 @@ curl -X POST http://localhost:8000/ingest \
 ```sh
 python event_generator.py
 ```
+
+## Profiling
+
+- Request timing middleware: set `ENABLE_REQUEST_TIMING=1` to log per-request durations (ms).
+- CPU profiling: run through `profiling.py` to collect a cProfile file:
+  ```sh
+  PROFILE_OUTPUT=/tmp/profile.out python profiling.py
+  # In another shell, generate JSON requests, then Ctrl+C when done.
+  python -m pstats /tmp/profile.out
+  # inside pstats:
+  # stats.sort_stats("tottime").print_stats(30)
+  ```

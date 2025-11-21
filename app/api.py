@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import os
 from fastapi import Depends, FastAPI, HTTPException
 from statistics import median
 import time
@@ -9,6 +11,7 @@ from app.state import app_state
 
 
 app = FastAPI(lifespan=lifespan)
+logger = logging.getLogger("app.api")
 
 
 def get_state():
@@ -45,8 +48,6 @@ async def get_user_median(user_id: str, state=Depends(get_state)):
 
 @app.get("/stats")
 async def get_stats(state=Depends(get_state)):
-    # Use a single reference timestamp so all windows are evaluated against
-    # the same cutoff while this handler runs.
     reference_ts = int(time.time())
     return {
         "total ingest requests": state.ingest_requests_total,
@@ -56,3 +57,20 @@ async def get_stats(state=Depends(get_state)):
         "queue rejections": state.queue_rejections,
         "median of user medians": await state.median_of_medians(reference_ts),
     }
+
+
+if os.getenv("ENABLE_REQUEST_TIMING"):
+    @app.middleware("http")
+    async def timing_middleware(request, call_next):
+        start = time.perf_counter()
+        response = await call_next(request)
+        duration_ms = (time.perf_counter() - start) * 1000.0
+        logger.info(
+            "request_timing",
+            extra={
+                "method": request.method,
+                "path": request.url.path,
+                "duration_ms": round(duration_ms, 2),
+            },
+        )
+        return response
