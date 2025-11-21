@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class InefficientModel(nn.Module):
     def __init__(self, in_dim=3):
         super().__init__()
@@ -10,7 +11,7 @@ class InefficientModel(nn.Module):
             nn.Dropout(p=0.0),
             nn.Linear(128, 128),
             nn.ReLU(),
-            nn.Linear(128, 1)
+            nn.Linear(128, 1),
         )
 
     def forward(self, x):

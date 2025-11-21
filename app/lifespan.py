@@ -37,9 +37,7 @@ async def lifespan(app: FastAPI):
     # Persist state periodically
     if app_state.state_file:
         tasks.append(
-            asyncio.create_task(
-                persistence_worker(app_state, app_state.state_file)
-            )
+            asyncio.create_task(persistence_worker(app_state, app_state.state_file))
         )
 
     app.state.worker_tasks = tasks

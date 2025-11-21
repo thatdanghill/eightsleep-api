@@ -11,5 +11,6 @@ class Event(BaseModel):
     timestamp: int
     features: List[float]
 
+
 class EventBatch(BaseModel):
     events: List[Event]

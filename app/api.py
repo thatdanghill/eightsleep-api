@@ -76,7 +76,7 @@ async def get_stats(state=Depends(get_state)):
         median of user medians: the median of all the medians for each user over the last five mins
     """
     reference_ts = int(time.time())
-    async with state._lock:  # noqa: SLF001
+    async with state._lock:
         stats_snapshot = {
             "total ingest requests": state.ingest_requests_total,
             "total events received": state.events_received_total,
@@ -85,12 +85,15 @@ async def get_stats(state=Depends(get_state)):
             "queue rejections": state.queue_rejections,
         }
 
-    stats_snapshot["median of user medians"] = await state.median_of_medians(reference_ts)
+    stats_snapshot["median of user medians"] = await state.median_of_medians(
+        reference_ts
+    )
     return stats_snapshot
 
 
 # Profiling
 if os.getenv("ENABLE_REQUEST_TIMING"):
+
     @app.middleware("http")
     async def timing_middleware(request, call_next):
         """

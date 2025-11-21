@@ -49,14 +49,22 @@ class AppState:
             self.ingest_last_ts = time.time()
 
     async def increment_inference_calls(self):
+        """
+        Increment the number of ingest calls made
+        """
         async with self._lock:
             self.inference_calls += 1
 
     async def increment_queue_rejections(self):
+        """
+        Increment the number of queue rejections
+        """
         async with self._lock:
             self.queue_rejections += 1
 
-    async def trim_user_window(self, user_id: str, cutoff: int) -> List[Tuple[int, float]]:
+    async def trim_user_window(
+        self, user_id: str, cutoff: int
+    ) -> List[Tuple[int, float]]:
         """
         Trim a user's rolling window according to a cutoff timestamp.
         Windows are assumed to be sorted, as insertion happens in sorted order, and we use the lock.
@@ -87,7 +95,9 @@ class AppState:
             idx = bisect_right(window, (timestamp, float("inf")))
             window.insert(idx, (timestamp, score))
 
-    async def median_of_medians(self, reference_ts: Optional[int] = None) -> Optional[float]:
+    async def median_of_medians(
+        self, reference_ts: Optional[int] = None
+    ) -> Optional[float]:
         """
         Calculate a median across user-level medians using a single
         cutoff point. Using one cutoff per request minimizes drift from
