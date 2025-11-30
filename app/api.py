@@ -11,7 +11,8 @@ from app.state import app_state
 
 
 app = FastAPI(lifespan=lifespan)
-logger = logging.getLogger("app.api")
+# Reuse uvicorn's logger so timing messages show up with standard formatting/handlers.
+logger = logging.getLogger("uvicorn.error")
 
 
 def get_state():
@@ -103,11 +104,9 @@ if os.getenv("ENABLE_REQUEST_TIMING"):
         response = await call_next(request)
         duration_ms = (time.perf_counter() - start) * 1000.0
         logger.info(
-            "request_timing",
-            extra={
-                "method": request.method,
-                "path": request.url.path,
-                "duration_ms": round(duration_ms, 2),
-            },
+            "request_timing method=%s path=%s duration_ms=%.2f",
+            request.method,
+            request.url.path,
+            duration_ms,
         )
         return response
